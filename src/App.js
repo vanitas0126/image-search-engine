@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Masonry from 'react-masonry-css';
 import axios from 'axios';
 
@@ -175,7 +175,7 @@ const getLicenseIcons = (source, license) => {
   return null;
 };
 
-// Flickr API 호출 부분 수정
+// Flickr API 호 부분 수정
 const fetchFlickrImages = async (query, page) => {
   const perPage = 100;  // 한 번에 가져오는 이미지 수 증가
   const response = await axios.get(
@@ -197,6 +197,55 @@ const fetchFlickrImages = async (query, page) => {
   return flickrImages;
 };
 
+// 이미지 데이터 매핑 부분 수정
+const processAPIResponse = (data, source) => {
+  switch (source) {
+    case 'pixabay':
+      return data.hits.map(item => ({
+        id: item.id,
+        url: item.largeImageURL,
+        title: item.tags,
+        author: item.user,
+        source: 'Pixabay',
+        source_url: item.pageURL  // Pixabay 이미지 페이지 URL
+      }));
+
+    case 'giphy':
+      return data.data.map(item => ({
+        id: item.id,
+        url: item.images.original.url,
+        title: item.title,
+        author: item.username,
+        source: 'GIPHY',
+        source_url: item.url  // GIPHY 이미지 페이지 URL
+      }));
+
+    case 'unsplash':
+      return data.results.map(item => ({
+        id: item.id,
+        url: item.urls.regular,
+        title: item.description || item.alt_description,
+        author: item.user.name,
+        source: 'Unsplash',
+        source_url: item.links.html  // Unsplash 이미지 페이지 URL
+      }));
+
+    case 'flickr':
+      return data.photos.photo.map(item => ({
+        id: item.id,
+        url: `https://live.staticflickr.com/${item.server}/${item.id}_${item.secret}.jpg`,
+        title: item.title,
+        author: item.owner,
+        source: 'Flickr',
+        license: item.license,
+        source_url: `https://www.flickr.com/photos/${item.owner}/${item.id}`  // Flickr 이미지 페이지 URL
+      }));
+
+    default:
+      return [];
+  }
+};
+
 function App() {
   const inputRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -206,7 +255,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const observer = useRef();
   const lastImageRef = useRef();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [error, setError] = useState(null);
 
   // 체크박스 상태 관리
@@ -231,42 +279,6 @@ function App() {
       ...prev,
       [source]: !prev[source]
     }));
-  };
-
-  // handleOptionClick 함수 추가
-  const handleOptionClick = (option) => {
-    const input = document.querySelector('input[type="text"]');
-    const cursorPos = input.selectionStart;
-    const textBefore = searchTerm.substring(0, cursorPos);
-    const textAfter = searchTerm.substring(cursorPos);
-    
-    // 앞쪽 여백 처리
-    const prefixSpace = textBefore.length > 0 && !textBefore.endsWith(' ') ? ' ' : '';
-    
-    let newValue;
-    let newCursorPos;
-    
-    if (option === 'exact') {
-      // Exact 버튼 클릭 시 따옴표 추가하고 커서를 따옴표 사이에 위치
-      newValue = textBefore + prefixSpace + '""' + ' ' + textAfter;
-      newCursorPos = cursorPos + prefixSpace.length + 1;
-    } else if (option === 'exclude') {
-      // Exclude 버튼 클릭 시 '-' 추가
-      newValue = textBefore + prefixSpace + '-' + textAfter;
-      newCursorPos = cursorPos + prefixSpace.length + 1;
-    } else {
-      // OR 버튼 클릭 시
-      newValue = textBefore + prefixSpace + 'OR ' + textAfter;
-      newCursorPos = cursorPos + prefixSpace.length + 3;
-    }
-    
-    setSearchTerm(newValue);
-    
-    // 커서 위치 조정
-    setTimeout(() => {
-      input.focus();
-      input.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
   };
 
   // Intersection Observer 설정
@@ -413,7 +425,7 @@ function App() {
             }
           });
           
-          console.log('Pixabay Raw Response:', response.data.hits[0]);  // 첫 번째 이미지 데이터 확인
+          console.log('Pixabay Raw Response:', response.data.hits[0]);  // 첫 ���째 이미지 ��이터 확인
           
           if (response.data.hits) {
             const filteredResults = filterResults(response.data.hits, 'pixabay');
@@ -570,7 +582,7 @@ function App() {
     if (searchTerm && page > 1) {
       handleSearch(false);
     }
-  }, [page, searchTerm]);
+  }, [page, searchTerm, handleSearch]);
 
   const breakpointColumns = {
     default: 4,
@@ -592,6 +604,12 @@ function App() {
   // 라이선스 필터링 함수
   const filterImagesByLicense = (images) => {
     return images.filter(image => {
+      // GIPHY 이미지 (Personal Use Only)
+      if (image.source === 'giphy') {
+        return licenseFilter.personal;  // Personal Use Only 체크박스가 true일 때만 표시
+      }
+      
+      // Flickr 이미지
       if (image.source === 'flickr') {
         const license = image.license;
         if (licenseFilter.commercial && ['4', '5', '9', '10'].includes(license)) return true;
@@ -600,9 +618,30 @@ function App() {
         if (licenseFilter.other && ['0', '7', '8'].includes(license)) return true;
         return false;
       }
-      // 다른 소스의 이미지는 기존 로직 유지
-      return true;
+      
+      // Pixabay & Unsplash (모든 용도 사용 가능)
+      if (image.source === 'pixabay' || image.source === 'unsplash') {
+        return true;  // 항상 표시
+      }
+      
+      return false;
     });
+  };
+
+  // getSourceURL 함수 추가
+  const getSourceURL = (image) => {
+    switch (image.source.toLowerCase()) {
+      case 'pixabay':
+        return `https://pixabay.com/photos/${image.id}`;
+      case 'giphy':
+        return `https://giphy.com/gifs/${image.id}`;
+      case 'unsplash':
+        return `https://unsplash.com/photos/${image.id}`;
+      case 'flickr':
+        return `https://www.flickr.com/photos/${image.author}/${image.id}`;
+      default:
+        return image.url;
+    }
   };
 
   return (
@@ -741,7 +780,7 @@ function App() {
                 checked={licenseFilter.personal}
                 onChange={() => setLicenseFilter(prev => ({...prev, personal: !prev.personal}))}
               />
-              Personal Use
+              Personal Use Only
             </label>
             <label className="flex items-center gap-2 text-xs text-gray-600">
               <input 
@@ -785,8 +824,7 @@ function App() {
                   className="w-full rounded-lg transition-opacity"
                 />
                 <div
-                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer"
-                  onClick={() => window.open(image.url, '_blank')}
+                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
                 >
                   <div className="absolute bottom-4 left-4">
                     <p className="text-white text-sm opacity-0 group-hover:opacity-100">
@@ -804,15 +842,16 @@ function App() {
                       </div>
                     </div>
                     <a
-                      href={image.source_url}
+                      href={image.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => window.open(image.url, '_blank')}
                       className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
                     >
                       이미지
                     </a>
                     <a
-                      href={image.source_url}
+                      href={getSourceURL(image)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
