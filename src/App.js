@@ -434,7 +434,7 @@ function App() {
       }
 
       // GIPHY
-      if (selectedSources.giphy && licenseFilter.personal) {
+      if (selectedSources.giphy && !licenseFilter.commercial) {
         try {
           const query = buildQueryForAPI(searchTerms, 'giphy');
           const response = await axios.get('https://api.giphy.com/v1/gifs/search', {
@@ -616,6 +616,9 @@ function App() {
     });
   };
 
+  // 필터링 적용
+  const filteredImages = filterImagesByLicense(images);
+
   return (
     <div className="font-pretendard font-normal">
       <div className="h-32" />
@@ -787,7 +790,7 @@ function App() {
             className="flex -ml-2 w-auto"
             columnClassName="pl-2 bg-clip-padding"
           >
-            {images.map((image) => (
+            {filteredImages.map((image) => (
               <div key={image.id} className="mb-2 relative group">
                 <img
                   src={image.url}
@@ -795,10 +798,12 @@ function App() {
                   loading="lazy"
                   className="w-full rounded-lg transition-opacity"
                 />
-                <div
-                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer"
-                  onClick={() => window.open(image.url, '_blank')}
-                >
+                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                     onClick={(e) => {
+                       if (e.target === e.currentTarget) {
+                         window.open(image.url, '_blank');
+                       }
+                     }}>
                   <div className="absolute bottom-4 left-4">
                     <p className="text-white text-sm opacity-0 group-hover:opacity-100">
                       {image.title}
@@ -815,18 +820,13 @@ function App() {
                       </div>
                     </div>
                     <a
-                      href={image.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
-                    >
-                      이미지
-                    </a>
-                    <a
                       href={image.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
                     >
                       출처
                     </a>
