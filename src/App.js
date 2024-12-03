@@ -785,11 +785,7 @@ function App() {
             </div>
           )}
 
-          <Masonry
-            breakpointCols={breakpointColumns}
-            className="flex -ml-2 w-auto"
-            columnClassName="pl-2 bg-clip-padding"
-          >
+          <Masonry breakpointCols={breakpointColumns} className="flex -ml-2 w-auto" columnClassName="pl-2">
             {filteredImages.map((image) => (
               <div key={image.id} className="mb-2 relative group">
                 <img
@@ -798,12 +794,14 @@ function App() {
                   loading="lazy"
                   className="w-full rounded-lg transition-opacity"
                 />
-                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
-                     onClick={(e) => {
-                       if (e.target === e.currentTarget) {
-                         window.open(image.url, '_blank');
-                       }
-                     }}>
+                <div 
+                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      window.open(image.url, '_blank');
+                    }
+                  }}
+                >
                   <div className="absolute bottom-4 left-4">
                     <p className="text-white text-sm opacity-0 group-hover:opacity-100">
                       {image.title}
@@ -819,6 +817,15 @@ function App() {
                         {getLicenseTooltip(image.source.toLowerCase(), image.license)}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(image.url, '_blank');
+                      }}
+                      className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
+                    >
+                      이미지
+                    </button>
                     <a
                       href={image.source_url}
                       target="_blank"
