@@ -784,41 +784,45 @@ function App() {
                   loading="lazy"
                   className="w-full rounded-lg transition-opacity"
                 />
-                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
-                <div className="absolute bottom-4 left-4">
-                  <p className="text-white text-sm opacity-0 group-hover:opacity-100">
-                    {image.title}
-                  </p>
-                  <p className="text-white text-xs opacity-0 group-hover:opacity-100">
-                    by {image.author}
-                  </p>
-                </div>
-                <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-0 group-hover:opacity-100">
-                  <div className="text-white group/license relative cursor-help">
-                    {getLicenseIcons(image.source.toLowerCase(), image.license)}
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover/license:opacity-100 transition-opacity duration-200 delay-300">
-                      {getLicenseTooltip(image.source.toLowerCase(), image.license)}
-                    </div>
+                <div
+                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer"
+                  onClick={() => window.open(image.url, '_blank')}
+                >
+                  <div className="absolute bottom-4 left-4">
+                    <p className="text-white text-sm opacity-0 group-hover:opacity-100">
+                      {image.title}
+                    </p>
+                    <p className="text-white text-xs opacity-0 group-hover:opacity-100">
+                      by {image.author}
+                    </p>
                   </div>
-                  <a
-                    href={image.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
-                  >
-                    이미지
-                  </a>
-                  <a
-                    href={image.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
-                  >
-                    출처
-                  </a>
-                  <span className="text-xs text-white bg-black px-2 py-1 rounded">
-                    {image.source}
-                  </span>
+                  <div className="absolute top-4 right-4 flex items-center space-x-2 opacity-0 group-hover:opacity-100">
+                    <div className="text-white group/license relative cursor-help">
+                      {getLicenseIcons(image.source.toLowerCase(), image.license)}
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover/license:opacity-100 transition-opacity duration-200 delay-300">
+                        {getLicenseTooltip(image.source.toLowerCase(), image.license)}
+                      </div>
+                    </div>
+                    <a
+                      href={image.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
+                    >
+                      이미지
+                    </a>
+                    <a
+                      href={image.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-black bg-white px-2 py-1 rounded hover:bg-opacity-90"
+                    >
+                      출처
+                    </a>
+                    <span className="text-xs text-white bg-black px-2 py-1 rounded">
+                      {image.source}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
